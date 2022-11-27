@@ -1,0 +1,57 @@
+<?php
+
+declare (strict_types = 1);
+
+namespace {%namespace%};
+
+use shiyun\route\annotation\{
+    RouteFlag,
+    RouteGroup,
+    RouteGet,
+    RoutePost,
+    RoutePut,
+    RoutePatch,
+    RouteDelete
+};
+use supper\Request;
+
+#[RouteFlag(flag:'')]
+#[RouteGroup(xxx:'')]
+class {%className%}
+{
+    #[RouteGet(path: '{id}')]
+    public function getById(Request $request, int $id = 0)
+    {
+        return response('getById__' . $id);
+    }
+    
+    #[RouteGet(path: '')]
+    public function getData()
+    {
+        return response('getData__');
+    }
+
+    #[RoutePost(path: '')]
+    public function postData()
+    {
+        return response('postData__');
+    }
+
+    #[RoutePut(path: '{id}')]
+    public function putById(Request $request, int $id = 0)
+    {
+        return response('putById__' . $id);
+    }
+
+    #[RoutePatch(path: '{id}')]
+    public function patchById(Request $request, int $id = 0)
+    {
+        return response('putById__' . $id);
+    }
+
+    #[RouteDelete(path: '{id}')]
+    public function deleteById(Request $request, int $id = 0)
+    {
+        return response('deleteById__' . $id);
+    }
+}
