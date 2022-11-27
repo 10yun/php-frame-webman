@@ -2,6 +2,6 @@
 
 namespace shiyun\model;
 
-class ModelException
+class ModelExtend
 {
 }

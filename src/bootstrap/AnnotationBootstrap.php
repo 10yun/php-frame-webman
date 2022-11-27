@@ -5,9 +5,17 @@ declare(strict_types=1);
 namespace shiyun\bootstrap;
 
 use shiyun\annotation\AnnotationParse;
-use shiyun\route\annotation\RouteGroup;
-use shiyun\route\annotation\Middleware;
-use shiyun\route\annotation\Route;
+use shiyun\route\annotation\{
+    RouteFlag,
+    RouteGroup,
+    RouteGet,
+    RoutePost,
+    RoutePut,
+    RoutePatch,
+    RouteDelete,
+    RouteRule,
+    RouteMiddleware,
+};
 use shiyun\route\RouteAnnotationHandle;
 use shiyun\validate\annotation\Validate;
 use shiyun\validate\ValidateAnnotationHandle;
@@ -20,19 +28,42 @@ class AnnotationBootstrap implements Bootstrap
             'app',
         ],
         'exclude_paths' => [],
+        'route' => [
+            'use_default_method' => true,
+        ],
     ];
 
+    /**
+     * 进程名称
+     * @var string
+     */
+    protected static string $workerName = '';
+
+    /**
+     * 注解配置
+     * @var array
+     */
     public static array $config = [];
 
+    /**
+     * @param $worker
+     * @return void
+     * @throws ReflectionException
+     */
     public static function start($worker)
     {
         // monitor进程不执行
-        if ($worker?->name == 'monitor') {
+        //if ($worker?->name == 'monitor') {
+        //   return;
+        //}
+
+        // 跳过忽略的进程
+        if (!$worker || self::isIgnoreProcess(self::$workerName = $worker->name)) {
             return;
         }
 
         // 获取配置
-        self::$config = config('plugin.linfly.annotation.annotation', []);
+        self::$config = config('plugin.shiyun.webman.annotation', []);
         $config = self::$config = array_merge(self::$defaultConfig, self::$config);
 
         self::createAnnotationHandle();
@@ -52,5 +83,31 @@ class AnnotationBootstrap implements Bootstrap
         AnnotationParse::addHandle(Middleware::class, RouteAnnotationHandle::class);
         // 验证器注解
         AnnotationParse::addHandle(Validate::class, RouteAnnotationHandle::class);
+    }
+
+    /**
+     * 是否为忽略的进程
+     * @param string|null $name
+     * @return bool
+     */
+    public static function isIgnoreProcess(string $name = null): bool
+    {
+        if (empty($name)) {
+            $name = self::$workerName;
+        }
+
+        return in_array($name, [
+            '',
+            'monitor',
+        ]);
+    }
+
+    /**
+     * 获取进程名称
+     * @return string
+     */
+    public static function getWorkerName(): string
+    {
+        return self::$workerName;
     }
 }

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace shiyun\annotation;
 
-use shiyun\annotation\IntfAnnotationItem;
-
 abstract class AbstractAnnotation implements IntfAnnotationItem
 {
     /**
@@ -112,7 +110,6 @@ abstract class AbstractAnnotation implements IntfAnnotationItem
         } else {
             $this->_arguments = $args;
         }
-
         return $this;
     }
 

@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace shiyun\route\annotation;
 
 use Attribute;
-use shiyun\route\annotation\abstracts\RouteAbstract;
-use shiyun\route\annotation\abstracts\RouteBase;
+use shiyun\annotation\AbstractAnnotation;
 
 #[Attribute(Attribute::TARGET_METHOD | Attribute::TARGET_PARAMETER | Attribute::IS_REPEATABLE)]
-class RouteRule extends RouteAbstract
+class RouteRule extends AbstractAnnotation
 {
     /**
      * @param string|array $path 路由路径 使用"/"开始则忽略控制器分组路径
@@ -25,24 +24,5 @@ class RouteRule extends RouteAbstract
     ) {
         // 解析参数
         $this->paresArgs(func_get_args(), 'path');
-    }
-}
-
-
-
-/**
- * 
- */
-#[Attribute(Attribute::TARGET_METHOD | Attribute::IS_REPEATABLE)]
-final class ResourceRule extends RouteBase
-{
-    public function __construct(
-        public ?string $name = null,
-        /**
-         * 请求类型
-         * @Enum({"GET","POST","PUT","DELETE","PATCH","OPTIONS","HEAD"})
-         */
-        public string $method = 'GET',
-    ) {
     }
 }

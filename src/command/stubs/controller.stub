@@ -1,6 +1,6 @@
 <?php
 
-declare (strict_types = 1);
+declare(strict_types=1);
 
 namespace {%namespace%};
 
@@ -15,8 +15,8 @@ use shiyun\route\annotation\{
 };
 use supper\Request;
 
-#[RouteFlag(flag:'')]
-#[RouteGroup(xxx:'')]
+#[RouteFlag(flag: '')]
+#[RouteGroup(prefix: '')]
 class {%className%}
 {
     #[RouteGet(path: '{id}')]
@@ -24,15 +24,15 @@ class {%className%}
     {
         return response('getById__' . $id);
     }
-    
+
     #[RouteGet(path: '')]
-    public function getData()
+    public function getData(Request $request)
     {
         return response('getData__');
     }
 
     #[RoutePost(path: '')]
-    public function postData()
+    public function postData(Request $request)
     {
         return response('postData__');
     }

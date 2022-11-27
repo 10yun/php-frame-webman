@@ -1,14 +1,11 @@
 <?php
-declare(strict_types = 1)
-	;
+
+declare(strict_types=1);
 
 namespace {%namespace%};
 
-use app\common\lib\ModelExtend;
+use shiyun\model\ModelExtend;
 
-/**
- * @mixin \think\Model
- */
 class {%className%} extends ModelExtend
 {
 
@@ -18,19 +15,8 @@ class {%className%} extends ModelExtend
 	protected $tableName = '';
 	// 主键
 	protected $tablePrimary = '';
-	// 设置字段信息
-	protected $schema = array(
-		// 'id' => 'int',
-		// 'name' => 'string',
-		// 'status' => 'int',
-		// 'score' => 'float',
-		// 'create_time' => 'datetime',
-		// 'update_time' => 'datetime',
-	);
 	// 设置只读字段
 	protected $readonly = [];
-	// 设置废弃字段
-	protected $disuse = [];
 	// 自动时间插入(新增和更新), 支持类型：timestamp/datetime/int
 	protected $autoWriteTimestamp = false;
 	// 定义时间戳字段名

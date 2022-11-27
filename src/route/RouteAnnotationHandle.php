@@ -4,10 +4,20 @@ declare(strict_types=1);
 
 namespace shiyun\route;
 
+use shiyun\bootstrap\AnnotationBootstrap;
 use shiyun\annotation\IntfAnnotationHandle;
-use shiyun\route\annotation\RouteGroup;
-use shiyun\route\annotation\Middleware;
-use shiyun\route\annotation\Route;
+
+use shiyun\route\annotation\{
+    RouteFlag,
+    RouteGroup,
+    RouteGet,
+    RoutePost,
+    RoutePut,
+    RoutePatch,
+    RouteDelete,
+    RouteRule,
+    RouteMiddleware,
+};
 use shiyun\validate\annotation\Validate;
 use shiyun\validate\annotation\ValidateMiddleware;
 use Webman\Route as WebManRoute;
@@ -26,12 +36,6 @@ abstract class RouteAnnotationHandle implements IntfAnnotationHandle
      * @var array
      */
     protected static array $middlewares = [];
-
-    /**
-     * 验证器
-     * @var array
-     */
-    protected static array $validates = [];
 
     /**
      * 保存的路由
@@ -68,25 +72,23 @@ abstract class RouteAnnotationHandle implements IntfAnnotationHandle
 
         switch ($annotation) {
                 // 控制器注解
-            case  RouteGroup::class:
+                // case RouteFlag::class:
+                // static::$controllers[$className] ??= [];
+                // static::$controllers[$className][] = $parameters;
+                // break;
+                // 控制器注解
+            case RouteGroup::class:
                 static::$controllers[$className] ??= [];
                 static::$controllers[$className][] = $parameters;
                 break;
-
                 // 控制器中间件注解
-            case Middleware::class:
+            case RouteMiddleware::class:
                 static::$middlewares[$className] ??= [];
                 static::$middlewares[$className][] = [
                     'middlewares' => (array)$parameters['middlewares'],
                     'only' => $parameters['only'],
                     'except' => $parameters['except'],
                 ];
-                break;
-
-                // 验证器注解
-            case Validate::class:
-                // 转发到验证器注解处理
-                ValidateAnnotationHandle::handle($item);
                 break;
         }
     }
@@ -106,20 +108,28 @@ abstract class RouteAnnotationHandle implements IntfAnnotationHandle
 
         switch ($annotation) {
                 // 路由注解
-            case Route::class:
+            case RouteRule::class:
                 static::$routes[] = $item;
                 break;
-
+            case RouteGet::class:
+                static::$routes[] = $item;
+                break;
+            case RoutePost::class:
+                static::$routes[] = $item;
+                break;
+            case RoutePut::class:
+                static::$routes[] = $item;
+                break;
+            case RoutePatch::class:
+                static::$routes[] = $item;
+                break;
+            case RouteDelete::class:
+                static::$routes[] = $item;
+                break;
                 // 方法中间件注解
             case Middleware::class:
                 $middlewares = static::$middlewares[$className . ':' . $method] ??= [];
                 static::$middlewares[$className . ':' . $method] = array_merge($middlewares, (array)$parameters['middlewares']);
-                break;
-
-                // 验证器注解
-            case Validate::class:
-                // 转发到验证器注解处理
-                ValidateAnnotationHandle::handle($item);
                 break;
         }
     }
@@ -132,11 +142,12 @@ abstract class RouteAnnotationHandle implements IntfAnnotationHandle
      */
     public static function createRoute(bool $isClear = true)
     {
-        $useDefaultMethod = config('plugin.linfly.annotation.annotation.route.use_default_method', true);
+        $useDefaultMethod = AnnotationBootstrap::$config['route']['use_default_method'] ?? true;
 
         foreach (self::$routes as $item) {
             $parameters = $item['parameters'];
 
+            // 未指定path参数且开启默认方法路由, 则使用方法名作为路由
             if (!isset($item['arguments']['path']) && $useDefaultMethod) {
                 $parameters['path'] = $item['method'];
             }
@@ -151,10 +162,16 @@ abstract class RouteAnnotationHandle implements IntfAnnotationHandle
             foreach (self::$controllers[$item['class']] ?? [['prefix' => '']] as $controller) {
                 // 控制器注解的path参数
                 $controllerPath = trim($controller['prefix'] ?? '', '/');
-                // 路由地址
-                $path = ($controllerPath ? '/' . $controllerPath : '') . ($parameters['path'] ? '/' . $parameters['path'] : '');
+                // 路由注解的path参数
+                $routePath = $parameters['path'];
+
+                // 控制器注解的path参数不为空时，拼接 "/" 路径分隔符，如果path参数以 "[/" (可变参数) 开头，则不拼接
+                $controllerPath = $controllerPath ? (str_starts_with($controllerPath, '[/') ? '' : '/') . $controllerPath : '';
+                // 路由注解的path参数不为空时，拼接 "/" 路径分隔符，如果path参数以 "[/" (可变参数) 开头，则不拼接
+                $routePath = $routePath ? (str_starts_with($routePath, '[/') ? '' : '/') . $routePath : '';
+
                 // 添加路由
-                self::addRoute($path, $item);
+                self::addRoute($controllerPath . $routePath, $item);
             }
         }
 

@@ -72,14 +72,23 @@ class AddonsCrudCommand extends Command
         $name = trim($name, "/");
         if (str_contains($name, '/')) {
             $nameArr = explode("/", $name);
-            $this->mkdir("$addons_path/controller/$nameArr[0]");
-            $this->createControllerFile("$addons_path/controller/$nameArr[0]/$nameArr[1].php", $nameArr[1]);
+            $name1 = strtolower($nameArr[0]);
+            $name2 = ucwords($nameArr[1]);
+            $name3 = "$name1/$name2";
+            $this->mkdir("$addons_path/controller/$name1");
+            $this->mkdir("$addons_path/model/$name1");
+            $this->mkdir("$addons_path/service/$name1");
+            $this->mkdir("$addons_path/validate/$name1");
         } else {
-            $this->createControllerFile("$addons_path/controller/$name.php", $name);
-            // $this->createFunctionsFile("$addons_path/app/functions.php");
-            // $this->createViewFile("$addons_path/app/view/index/index.html");
-            // $this->createExceptionFile("$addons_path/app/exception/Handler.php", $name);
+            $name2 = ucwords($name);
+            $name3 = $name2;
         }
+        $this->createControllerFile("$addons_path/controller/{$name3}Contlr.php", "{$name2}Contlr");
+        $this->createModelFile("$addons_path/model/{$name3}Model.php", "{$name2}Model");
+        $this->createValidateFile("$addons_path/validate/{$name3}Valida.php", "{$name2}Valida");
+        // $this->createFunctionsFile("$addons_path/app/functions.php");
+        // $this->createViewFile("$addons_path/app/view/index/index.html");
+        // $this->createExceptionFile("$addons_path/app/exception/Handler.php", $name);
     }
 
     /**
@@ -97,7 +106,8 @@ class AddonsCrudCommand extends Command
     protected function getStrNamespace($path = '')
     {
         $base_path = base_path();
-        $file_name = strtolower(basename($path));
+        $file_name = basename($path);
+
         $namespace_str = str_replace($base_path, '', $path);
         $namespace_str = str_replace($file_name, '', $namespace_str);
         $namespace_str = trim($namespace_str, '/');
@@ -115,19 +125,56 @@ class AddonsCrudCommand extends Command
      */
     protected function createControllerFile($path, $name)
     {
-        $namespace = $this->getStrNamespace($path);
-        $class = $this->getStrClass($name);
+        if (!is_file($path)) {
+            $namespace = $this->getStrNamespace($path);
+            $class = $this->getStrClass($name);
 
-        $stub_path = __DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'controller.stub';
-        $stub_content = '';
-        $stub_content  = file_get_contents($stub_path);
-        $stub_content = str_replace(['{%namespace%}', '{%className%}'], [
-            $namespace,
-            $class,
-        ], $stub_content);
-        file_put_contents($path, $stub_content);
+            $stub_path = __DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'controller.stub';
+            $stub_content = '';
+            $stub_content  = file_get_contents($stub_path);
+            $stub_content = str_replace(['{%namespace%}', '{%className%}'], [
+                $namespace,
+                $class,
+            ], $stub_content);
+            echo "Create {$namespace} \r\n";
+            file_put_contents($path, $stub_content);
+        }
+    }
+    protected function createModelFile($path, $name)
+    {
+        if (!is_file($path)) {
+            $namespace = $this->getStrNamespace($path);
+            $class = $this->getStrClass($name);
+
+            $stub_path = __DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'model.stub';
+            $stub_content = '';
+            $stub_content  = file_get_contents($stub_path);
+            $stub_content = str_replace(['{%namespace%}', '{%className%}'], [
+                $namespace,
+                $class,
+            ], $stub_content);
+            echo "Create {$namespace} \r\n";
+            file_put_contents($path, $stub_content);
+        }
     }
 
+    protected function createValidateFile($path, $name)
+    {
+        if (!is_file($path)) {
+            $namespace = $this->getStrNamespace($path);
+            $class = $this->getStrClass($name);
+
+            $stub_path = __DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'validate.stub';
+            $stub_content = '';
+            $stub_content  = file_get_contents($stub_path);
+            $stub_content = str_replace(['{%namespace%}', '{%className%}'], [
+                $namespace,
+                $class,
+            ], $stub_content);
+            echo "Create {$namespace} \r\n";
+            file_put_contents($path, $stub_content);
+        }
+    }
     /**
      * @param $path
      * @return void

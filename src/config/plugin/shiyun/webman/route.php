@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+use shiyun\bootstrap\AnnotationBootstrap;
+
 use shiyun\route\RouteAnnotationHandle;
 
-RouteAnnotationHandle::createRoute();
+if (!AnnotationBootstrap::isIgnoreProcess()) {
+    RouteAnnotationHandle::createRoute();
+}

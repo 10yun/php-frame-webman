@@ -14,9 +14,6 @@ use ReflectionProperty;
 use ReflectionAttribute;
 use ReflectionException;
 use ReflectionParameter;
-use shiyun\annotation\AnnotationUtil;
-use shiyun\annotation\IntfAnnotationItem;
-use shiyun\annotation\IntfAnnotationHandle;
 
 abstract class AnnotationParse
 {
@@ -46,12 +43,25 @@ abstract class AnnotationParse
         $excludeRegular = $regular ? '/^(' . $regular . ')/' : '';
 
         foreach ($include as $path) {
-            // 扫描绝对路径
-            $path = AnnotationUtil::basePath(AnnotationUtil::replaceSeparator($path));
-            // 遍历获取文件
-            yield from AnnotationUtil::findDirectory($path, function (SplFileInfo $item) use ($excludeRegular) {
-                return $item->getExtension() === 'php' && !($excludeRegular && preg_match($excludeRegular, $item->getPathname()));
-            });
+            // 2022-1128 增加支持*
+            if (str_contains($path, "*")) {
+                $path_arr = glob($path);
+                foreach ($path_arr as $path_item) {
+                    // 扫描绝对路径
+                    $path_item = AnnotationUtil::basePath(AnnotationUtil::replaceSeparator($path_item));
+                    // 遍历获取文件
+                    yield from AnnotationUtil::findDirectory($path_item, function (SplFileInfo $item) use ($excludeRegular) {
+                        return $item->getExtension() === 'php' && !($excludeRegular && preg_match($excludeRegular, $item->getPathname()));
+                    });
+                }
+            } else {
+                // 扫描绝对路径
+                $path = AnnotationUtil::basePath(AnnotationUtil::replaceSeparator($path));
+                // 遍历获取文件
+                yield from AnnotationUtil::findDirectory($path, function (SplFileInfo $item) use ($excludeRegular) {
+                    return $item->getExtension() === 'php' && !($excludeRegular && preg_match($excludeRegular, $item->getPathname()));
+                });
+            }
         }
     }
 
@@ -68,9 +78,9 @@ abstract class AnnotationParse
         foreach ($generator as $item) {
             // 获取路径中的类名地址
             $pathname = $item->getPathname();
+
             $className = substr($pathname, strlen(AnnotationUtil::basePath()) + 1, -4);
             $className = str_replace('/', '\\', $className);
-
             try {
                 if (!class_exists($className)) {
                     continue;
@@ -80,37 +90,6 @@ abstract class AnnotationParse
             } catch (Throwable) {
                 continue;
             }
-
-            // // 解析类的注解
-            // $classAnnotation = self::parseClassAnnotations($reflection);
-            // $classAnnotation['class'] = [$className => $classAnnotation['class']];
-            //
-            // // 循环解析类型 $type: class、method、property
-            // foreach ($classAnnotation as $type => $items) {
-            //     // 循环类型的解析类型
-            //     // $name：className、methodName、propertyName、methodParameterName
-            //     // $annotations: 对应类型的注解列表
-            //     foreach ($items as $annotations) {
-            //         if ($type === 'method') {
-            //             $annotations = [...array_values($annotations['methods']), ...array_values($annotations['parameters'])];
-            //         }
-            //         // 循环解析的循环注解列表
-            //         foreach ($annotations as $annotation) {
-            //             // 循环注解的多个结果
-            //             foreach ($annotation as $item) {
-            //                 // 注解类
-            //                 $annotationClass = $item['annotation'];
-            //                 // 调用注解处理类
-            //                 if (isset(self::$handle[$annotationClass])) {
-            //                     /** @var IntfAnnotationHandle $handle */
-            //                     foreach (self::$handle[$annotationClass] as $handle) {
-            //                         [$handle, 'handle']($item, $className);
-            //                     }
-            //                 }
-            //             }
-            //         }
-            //     }
-            // }
 
             // 解析类的注解
             foreach (self::yieldParseClassAnnotations($reflection) as $annotations) {
