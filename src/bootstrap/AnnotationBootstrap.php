@@ -5,20 +5,7 @@ declare(strict_types=1);
 namespace shiyun\bootstrap;
 
 use shiyun\annotation\AnnotationParse;
-use shiyun\route\annotation\{
-    RouteFlag,
-    RouteGroup,
-    RouteGet,
-    RoutePost,
-    RoutePut,
-    RoutePatch,
-    RouteDelete,
-    RouteRule,
-    RouteMiddleware,
-};
-use shiyun\route\RouteAnnotationHandle;
-use shiyun\validate\annotation\Validate;
-use shiyun\validate\ValidateAnnotationHandle;
+use shiyun\route\RouteAttriLoad;
 use Webman\Bootstrap;
 
 class AnnotationBootstrap implements Bootstrap
@@ -66,23 +53,12 @@ class AnnotationBootstrap implements Bootstrap
         self::$config = config('plugin.shiyun.webman.annotation', []);
         $config = self::$config = array_merge(self::$defaultConfig, self::$config);
 
-        self::createAnnotationHandle();
+        RouteAttriLoad::loader();
 
         // 注解扫描
-        $generator = AnnotationParse::scan($config['include_paths'], $config['exclude_paths']);
+        $generator = AnnotationParse::scanAnnotations($config['include_paths'], $config['exclude_paths']);
         // 解析注解
         AnnotationParse::parseAnnotations($generator);
-    }
-    protected static function createAnnotationHandle()
-    {
-        // 控制器注解
-        AnnotationParse::addHandle(RouteGroup::class, RouteAnnotationHandle::class);
-        // 路由注解
-        AnnotationParse::addHandle(Route::class, RouteAnnotationHandle::class);
-        // 中间件注解
-        AnnotationParse::addHandle(Middleware::class, RouteAnnotationHandle::class);
-        // 验证器注解
-        AnnotationParse::addHandle(Validate::class, RouteAnnotationHandle::class);
     }
 
     /**

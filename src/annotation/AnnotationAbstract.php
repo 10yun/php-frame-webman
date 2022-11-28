@@ -2,11 +2,9 @@
 
 declare(strict_types=1);
 
-namespace shiyun\route\annotation\abstracts;
+namespace shiyun\annotation;
 
-use shiyun\route\annotation\interfaces\RouteInterface;
-
-abstract class RouteAbstract implements RouteInterface
+abstract class AnnotationAbstract implements IntfAnnotationItem
 {
     /**
      * 注解传入的参数
@@ -37,7 +35,6 @@ abstract class RouteAbstract implements RouteInterface
     {
         // 解析参数
         $this->paresParameters();
-
         // 非注释解析传参
         if (isset($args[1])) {
             return $this->_arguments;
@@ -112,7 +109,6 @@ abstract class RouteAbstract implements RouteInterface
         } else {
             $this->_arguments = $args;
         }
-
         return $this;
     }
 
@@ -124,7 +120,6 @@ abstract class RouteAbstract implements RouteInterface
     public function getParameters(): array
     {
         $params = [];
-
         foreach ($this->_parameters as $value) {
             $params[$value] = $this->_arguments[$value] ?? $this->_defaultValues[$value] ?? null;
         }

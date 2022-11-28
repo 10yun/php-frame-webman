@@ -13,13 +13,14 @@ use shiyun\route\annotation\{
     RoutePatch,
     RouteDelete
 };
-use supper\Request;
+use support\Request;
+use support\Response;
 
-#[RouteFlag(flag: '')]
-#[RouteGroup(prefix: '')]
+#[RouteFlag(flag: '{%annoFlag%}')]
+#[RouteGroup(prefix: '{%annoGroup%}')]
 class {%className%}
 {
-    #[RouteGet(path: '{id}')]
+    #[RouteGet(path: '{id:\d+}')]
     public function getById(Request $request, int $id = 0)
     {
         return response('getById__' . $id);
@@ -37,19 +38,19 @@ class {%className%}
         return response('postData__');
     }
 
-    #[RoutePut(path: '{id}')]
+    #[RoutePut(path: '{id:\d+}')]
     public function putById(Request $request, int $id = 0)
     {
         return response('putById__' . $id);
     }
 
-    #[RoutePatch(path: '{id}')]
+    #[RoutePatch(path: '{id:\d+}')]
     public function patchById(Request $request, int $id = 0)
     {
-        return response('putById__' . $id);
+        return response('patchById__' . $id);
     }
 
-    #[RouteDelete(path: '{id}')]
+    #[RouteDelete(path: '{id:\d+}')]
     public function deleteById(Request $request, int $id = 0)
     {
         return response('deleteById__' . $id);

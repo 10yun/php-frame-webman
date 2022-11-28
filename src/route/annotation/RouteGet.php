@@ -4,37 +4,25 @@ declare(strict_types=1);
 
 namespace shiyun\route\annotation;
 
-use shiyun\annotation\AbstractAnnotation;
+use shiyun\route\annotation\common\RouteAbstract;
 use Attribute;
 
-#[Attribute(Attribute::TARGET_METHOD)]
-class RouteGet extends AbstractAnnotation
+#[Attribute(Attribute::TARGET_METHOD | Attribute::TARGET_PARAMETER | Attribute::IS_REPEATABLE)]
+class RouteGet extends RouteAbstract
 {
-    protected string $methods = "GET";
+    protected array $attrMust = ['path'];
+    protected array $_defaultValues = ['methods' => ['GET', 'OPTIONS']];
+    protected string|array $methods = ['GET', 'OPTIONS'];
 
     /**
      * @param string|array $path 路由路径 使用"/"开始则忽略控制器分组路径
      */
     public function __construct(
-        public string $path = '',
+        public string|array $path = '',
+        public string       $name = '',
+        public array        $params = [],
     ) {
         // 解析参数
-        $this->paresArgs([
-            ...func_get_args(),
-            'methods' => 'GET',
-            'method' => 'GET',
-        ], 'path');
-        // 设置参数
-        $this->setArguments([
-            'methods' => 'GET'
-        ]);
-    }
-    /**
-     * @return array
-     */
-    public function getMethod(): array
-    {
-        return $this->methods;
-        return explode('|', strtolower($this->methods));
+        $this->paresArgs(func_get_args(), 'path');
     }
 }

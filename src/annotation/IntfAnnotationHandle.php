@@ -12,5 +12,5 @@ interface IntfAnnotationHandle
      * @param array $item
      * @return void
      */
-    public static function handle(array $item): void;
+    public static function handle(array $item = []): void;
 }

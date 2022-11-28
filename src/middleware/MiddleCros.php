@@ -8,7 +8,7 @@ use Webman\MiddlewareInterface;
 use Webman\Http\Response;
 use Webman\Http\Request;
 
-class AccessControlTest implements MiddlewareInterface
+class MiddleCros implements MiddlewareInterface
 {
     public function process(Request $request, callable $handler): Response
     {
@@ -22,7 +22,6 @@ class AccessControlTest implements MiddlewareInterface
             'Access-Control-Allow-Methods' => $request->header('access-control-request-method', '*'),
             'Access-Control-Allow-Headers' => $request->header('access-control-request-headers', '*'),
         ]);
-
         return $response;
     }
 }

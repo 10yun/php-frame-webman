@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace shiyun\validate\annotation;
 
 use Attribute;
-use shiyun\annotation\AbstractAnnotation;
+use shiyun\annotation\AnnotationAbstract;
 
 /**
  * 验证
  */
 #[Attribute(Attribute::TARGET_CLASS | Attribute::TARGET_METHOD | \Attribute::IS_REPEATABLE)]
-class Validate extends AbstractAnnotation
+class Validate extends AnnotationAbstract
 {
     /**
      * 验证器注解类
@@ -26,8 +26,11 @@ class Validate extends AbstractAnnotation
      * @param string $validate 验证器类名
      * @param string $scene 验证场景
      */
-    public function __construct(public string|array $params = '$all', public string $validate = '', public string $scene = '')
-    {
+    public function __construct(
+        public string|array $params = '$all',
+        public string $validate = '',
+        public string $scene = ''
+    ) {
         // 解析参数
         $this->paresArgs(func_get_args(), 'params');
     }

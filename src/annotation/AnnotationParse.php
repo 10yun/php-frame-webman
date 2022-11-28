@@ -36,32 +36,31 @@ abstract class AnnotationParse
      * @param array $exclude 排除的路径
      * @return Generator
      */
-    public static function scan(array $include, array $exclude = [])
+    public static function scanAnnotations(array $include, array $exclude = [])
     {
         // 排除路径转正则表达式
         $regular = AnnotationUtil::excludeToRegular($exclude);
         $excludeRegular = $regular ? '/^(' . $regular . ')/' : '';
 
+        $include_all = [];
         foreach ($include as $path) {
             // 2022-1128 增加支持*
             if (str_contains($path, "*")) {
                 $path_arr = glob($path);
                 foreach ($path_arr as $path_item) {
-                    // 扫描绝对路径
-                    $path_item = AnnotationUtil::basePath(AnnotationUtil::replaceSeparator($path_item));
-                    // 遍历获取文件
-                    yield from AnnotationUtil::findDirectory($path_item, function (SplFileInfo $item) use ($excludeRegular) {
-                        return $item->getExtension() === 'php' && !($excludeRegular && preg_match($excludeRegular, $item->getPathname()));
-                    });
+                    $include_all[] = $path_item;
                 }
             } else {
-                // 扫描绝对路径
-                $path = AnnotationUtil::basePath(AnnotationUtil::replaceSeparator($path));
-                // 遍历获取文件
-                yield from AnnotationUtil::findDirectory($path, function (SplFileInfo $item) use ($excludeRegular) {
-                    return $item->getExtension() === 'php' && !($excludeRegular && preg_match($excludeRegular, $item->getPathname()));
-                });
+                $include_all[] = $path;
             }
+        }
+        foreach ($include_all as $path) {
+            // 扫描绝对路径
+            $path = AnnotationUtil::basePath(AnnotationUtil::replaceSeparator($path));
+            // 遍历获取文件
+            yield from AnnotationUtil::findDirectory($path, function (SplFileInfo $item) use ($excludeRegular) {
+                return $item->getExtension() === 'php' && !($excludeRegular && preg_match($excludeRegular, $item->getPathname()));
+            });
         }
     }
 
@@ -81,18 +80,19 @@ abstract class AnnotationParse
 
             $className = substr($pathname, strlen(AnnotationUtil::basePath()) + 1, -4);
             $className = str_replace('/', '\\', $className);
+
             try {
                 if (!class_exists($className)) {
                     continue;
                 }
                 // 反射类
-                $reflection = new ReflectionClass($className);
+                $reflectionClass = new ReflectionClass($className);
             } catch (Throwable) {
                 continue;
             }
 
             // 解析类的注解
-            foreach (self::yieldParseClassAnnotations($reflection) as $annotations) {
+            foreach (self::yieldParseClassAnnotations($reflectionClass) as $annotations) {
                 // 遍历注解结果集
                 foreach ($annotations as $item) {
                     // 注解类
@@ -106,6 +106,62 @@ abstract class AnnotationParse
                     }
                 }
             }
+        }
+    }
+    /**
+     * 解析类注解 包括：类注解、属性注解、方法注解、方法参数注解，利用Generator提高性能
+     * @access public
+     * @param string|ReflectionClass $className
+     * @return Generator
+     * @throws ReflectionException
+     */
+    public static function yieldParseClassAnnotations(
+        string|ReflectionClass $className
+    ): Generator {
+        $reflectionClass = is_string($className) ? new ReflectionClass($className) : $className;
+
+        // 获取类的注解
+        yield from self::getClassAnnotations($reflectionClass);
+        // 获取所有方法的注解
+        // foreach ($reflectionClass->getMethods(ReflectionMethod::IS_PUBLIC) as $reflectionMethod) {
+        //     $middlewares = '';
+        //     $path        = "";
+        //     $methods     = "";
+        //     foreach ($reflectionMethod->getAttributes() as $kk => $attribute) {
+        //         if ($attribute->getName() === Middleware::class) {
+        //             $middlewares = $attribute->getArguments();
+        //         }
+        //         if ($attribute->getName() === Middlewares::class) {
+        //             $middlewares = $attribute->getArguments();
+        //         }
+        //         if ($attribute->getName() === RequestMapping::class) {
+        //             $path = $attribute->getArguments()["path"] ?? "";
+        //             $methods = $attribute->newInstance()->setMethods();
+        //         }
+        //     }
+
+        //     if (!empty($methods) and !empty($path)) {
+        //         if (!empty($middlewares)) {
+        //             WebmanRoute::add($methods, $path, [$class_name, $reflectionMethod->name])->middleware($middlewares);
+        //         } else {
+        //             WebmanRoute::add($methods, $path, [$class_name, $reflectionMethod->name]);
+        //         }
+        //     }
+        // }
+        foreach ($reflectionClass->getMethods() as $reflectionMethod) {
+            // 获取方法注解
+            $method = self::getMethodAnnotations($reflectionMethod);
+            $method && (yield from $method);
+            // 获取方法参数的注解
+            foreach ($reflectionMethod->getParameters() as $reflectionParameter) {
+                $parameter = self::getMethodParameterAnnotations($reflectionMethod, $reflectionParameter);
+                $parameter && (yield from $parameter);
+            }
+        }
+        // 获取所有属性的注解
+        foreach ($reflectionClass->getProperties() as $reflectionProperty) {
+            $property = self::getPropertyAnnotations($reflectionClass, $reflectionProperty);
+            $property && (yield from $property);
         }
     }
 
@@ -156,36 +212,6 @@ abstract class AnnotationParse
         return ['class' => $class, 'method' => $methods, 'property' => $properties];
     }
 
-    /**
-     * 解析类注解 包括：类注解、属性注解、方法注解、方法参数注解，利用Generator提高性能
-     * @access public
-     * @param string|ReflectionClass $className
-     * @return Generator
-     * @throws ReflectionException
-     */
-    public static function yieldParseClassAnnotations(string|ReflectionClass $className): Generator
-    {
-        $reflectionClass = is_string($className) ? new ReflectionClass($className) : $className;
-
-        // 获取类的注解
-        yield from self::getClassAnnotations($reflectionClass);
-        // 获取所有方法的注解
-        foreach ($reflectionClass->getMethods() as $reflectionMethod) {
-            // 获取方法注解
-            $method = self::getMethodAnnotations($reflectionMethod);
-            $method && (yield from $method);
-            // 获取方法参数的注解
-            foreach ($reflectionMethod->getParameters() as $reflectionParameter) {
-                $parameter = self::getMethodParameterAnnotations($reflectionMethod, $reflectionParameter);
-                $parameter && (yield from $parameter);
-            }
-        }
-        // 获取所有属性的注解
-        foreach ($reflectionClass->getProperties() as $reflectionProperty) {
-            $property = self::getPropertyAnnotations($reflectionClass, $reflectionProperty);
-            $property && (yield from $property);
-        }
-    }
 
     /**
      * 获取类注解
@@ -195,13 +221,15 @@ abstract class AnnotationParse
      * @return array
      * @throws ReflectionException
      */
-    public static function getClassAnnotations(string|ReflectionClass $className, array|string $scanAnnotations = []): array
-    {
+    public static function getClassAnnotations(
+        string|ReflectionClass $className,
+        array|string $scanAnnotations = []
+    ): array {
         $scanAnnotations = (array)$scanAnnotations;
 
         $reflection = is_string($className) ? new ReflectionClass($className) : $className;
 
-        $annotations = self::cache($reflection->getName(), 'class', function () use ($reflection) {
+        $annotations = self::cacheAnnotation($reflection->getName(), 'class', function () use ($reflection) {
             // 扫描PHP8原生注解
             $attributes = $reflection->getAttributes();
 
@@ -226,18 +254,19 @@ abstract class AnnotationParse
      * @return array
      * @throws ReflectionException
      */
-    public static function getMethodAnnotations(string|ReflectionMethod $methodName, array|string $scanAnnotations = []): array
-    {
+    public static function getMethodAnnotations(
+        string|ReflectionMethod $methodName,
+        array|string $scanAnnotations = []
+    ): array {
         $scanAnnotations = (array)$scanAnnotations;
 
         $reflectionMethod = is_string($methodName) ? new ReflectionMethod($methodName) : $methodName;
         // 类.方法名 标签
         $tag = 'method.' . $reflectionMethod->name;
 
-        $annotations = self::cache($reflectionMethod->class, $tag, function () use ($reflectionMethod) {
+        $annotations = self::cacheAnnotation($reflectionMethod->class, $tag, function () use ($reflectionMethod) {
             // 扫描PHP8原生注解
             $attributes = $reflectionMethod->getAttributes();
-
 
             return self::buildScanAnnotationItems([
                 ...$attributes,
@@ -263,8 +292,11 @@ abstract class AnnotationParse
      * @return array
      * @throws ReflectionException
      */
-    public static function getPropertyAnnotations(string|ReflectionClass $className, string|ReflectionProperty $propertyName, array|string $scanAnnotations = []): array
-    {
+    public static function getPropertyAnnotations(
+        string|ReflectionClass $className,
+        string|ReflectionProperty $propertyName,
+        array|string $scanAnnotations = []
+    ): array {
         $scanAnnotations = (array)$scanAnnotations;
 
         $reflectionClass = is_string($className) ? new ReflectionClass($className) : $className;
@@ -272,7 +304,7 @@ abstract class AnnotationParse
         // 类.属性名 标签
         $tag = 'property.' . $reflectionProperty->name;
 
-        $annotations = self::cache($reflectionClass->name, $tag, function () use ($reflectionProperty) {
+        $annotations = self::cacheAnnotation($reflectionClass->name, $tag, function () use ($reflectionProperty) {
             // 扫描PHP8原生注解
             $attributes = $reflectionProperty->getAttributes();
 
@@ -300,8 +332,11 @@ abstract class AnnotationParse
      * @return array
      * @throws ReflectionException
      */
-    public static function getMethodParameterAnnotations(string|ReflectionMethod $methodName, string|ReflectionParameter $parameterName, array|string $scanAnnotations = [])
-    {
+    public static function getMethodParameterAnnotations(
+        string|ReflectionMethod $methodName,
+        string|ReflectionParameter $parameterName,
+        array|string $scanAnnotations = []
+    ) {
         $scanAnnotations = (array)$scanAnnotations;
         $reflectionMethod = is_string($methodName) ? new ReflectionMethod($methodName) : $methodName;
 
@@ -316,7 +351,7 @@ abstract class AnnotationParse
 
         $tag = 'parameter.' . $reflectionMethod->name . '.' . $reflectionParameter->name;
 
-        $annotations = self::cache($reflectionMethod->class, $tag, function () use ($reflectionMethod, $reflectionParameter) {
+        $annotations = self::cacheAnnotation($reflectionMethod->class, $tag, function () use ($reflectionMethod, $reflectionParameter) {
             // 扫描PHP8原生注解
             $attributes = $reflectionParameter->getAttributes();
 
@@ -382,7 +417,7 @@ abstract class AnnotationParse
      * @param array|Closure|null $data
      * @return array|Closure|false|mixed
      */
-    public static function cache(string $className, string $tag, array|Closure $data = null)
+    public static function cacheAnnotation(string $className, string $tag, array|Closure $data = null)
     {
         if (is_null($data)) {
             return self::$annotations[$className][$tag] ?? false;

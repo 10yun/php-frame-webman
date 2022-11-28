@@ -2,10 +2,25 @@
 
 declare(strict_types=1);
 
-namespace shiyun\annotation;
+namespace shiyun\route\annotation\common;
 
-abstract class AbstractAnnotation implements IntfAnnotationItem
+use shiyun\annotation\IntfAnnotationItem;
+
+// abstract class RouteAbstract implements RouteInterface
+abstract class RouteAbstract implements IntfAnnotationItem
 {
+    /**
+     * 必传属性
+     */
+    protected array $attrMust = [];
+    /**
+     * 解析需要的属性
+     */
+    protected array $attrNeed = ['methods'];
+    /**
+     * methods类型
+     */
+    protected string|array $methods = [];
     /**
      * 注解传入的参数
      * @var array
@@ -80,14 +95,28 @@ abstract class AbstractAnnotation implements IntfAnnotationItem
             return $param->getName();
         }, $parameters);
     }
-
+    protected function parseNeedParam(array $paramLast = []): array
+    {
+        // 增加需要的类属性，追加
+        if (is_array($this->attrNeed) && count($this->attrNeed)) {
+            foreach ($this->attrNeed as $key => $val) {
+                if (empty($paramLast[$val])) {
+                    $methods_name = strtoupper($val);
+                    if (method_exists($this, "get{$methods_name}")) {
+                        $paramLast[$val] = call_user_func([$this, "get{$methods_name}"]);
+                    }
+                }
+            }
+        }
+        return $paramLast;
+    }
     /**
      * 获取传入的参数
      * @return array
      */
     public function getArguments(): array
     {
-        return $this->_arguments;
+        return $this->parseNeedParam($this->_arguments);
     }
 
     /**
@@ -110,6 +139,7 @@ abstract class AbstractAnnotation implements IntfAnnotationItem
         } else {
             $this->_arguments = $args;
         }
+
         return $this;
     }
 
@@ -121,10 +151,38 @@ abstract class AbstractAnnotation implements IntfAnnotationItem
     public function getParameters(): array
     {
         $params = [];
-
         foreach ($this->_parameters as $value) {
             $params[$value] = $this->_arguments[$value] ?? $this->_defaultValues[$value] ?? null;
         }
-        return $params;
+        return $this->parseNeedParam($params);
+    }
+
+    /**
+     * 动态设置所有的参数
+     * @param array $args
+     * @return static
+     */
+    public function setParameters(array $args = []): static
+    {
+        foreach ($args as $key => $value) {
+            $this->_parameters[$key] = $value;
+        }
+        return $this;
+    }
+    /**
+     * @return array
+     */
+    public function getMethods(): string|array
+    {
+        $methods = [];
+        if (is_string($this->methods)) {
+            $methods[] = $this->methods;
+        } else if (is_array($this->methods)) {
+            $methods = $this->methods;
+        }
+        foreach ($methods as $key => $val) {
+            $methods[$key] = strtoupper($val);
+        }
+        return $methods;
     }
 }

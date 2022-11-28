@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace shiyun\route\annotation\interfaces;
+namespace shiyun\route\annotation\common;
 
 interface RouteInterface
 {

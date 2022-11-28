@@ -4,15 +4,16 @@
 
 ## 路由注解
 
-| 名称            | 注解地方 | 说明                              | 参数 |
-| :-------------- | :------- | :-------------------------------- | :--- |
-| RouteFlag       |          |                                   |
-| RouteHead       |          |                                   |
-| RouteRequest    |          | 支持GET、POST、                   |      |
-| RouteRule       | method   | 支持GET、POST、PUT、PATCH、DELETE |      |
-| RouteGet        |          |                                   |      |
-| RoutePost       |          |                                   |      |
-| RoutePut        |          |                                   |      |
-| RoutePatch      |          |                                   |      |
-| RouteDelete     |          | 只支持Delete                      |      |
-| RouteMiddleware |          |                                   |
+| 名称            | 注解位置      | 是否可重复 | 说明                                   | 参数 |
+| :-------------- | :------------ | :--------- | :------------------------------------- | :--- |
+| RouteHead       | class、method | true       |
+| RouteFlag       | class         | true       |
+| RouteRestful    | class         | true       |                                        |
+| RouteGroup      | class         | true       |                                        |
+| RouteRule       | method        | true       | OPTIONS、GET、POST、PUT、PATCH、DELETE |
+| RouteGet        | method        | true       | OPTIONS、GET                           |
+| RoutePost       | method        | true       | OPTIONS、POST                          |
+| RoutePut        | method        | true       | OPTIONS、PUT                           |
+| RoutePatch      | method        | true       | OPTIONS、PATCH                         |
+| RouteDelete     | method        | true       | OPTIONS、DELETE                        |
+| RouteMiddleware | class、method | true       |

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace shiyun\route\annotation;
 
-use shiyun\annotation\AbstractAnnotation;
+use shiyun\route\annotation\common\RouteAbstract;
 use Attribute;
 
 /**
@@ -12,7 +12,7 @@ use Attribute;
  * 注解中间件
  */
 #[Attribute(Attribute::TARGET_CLASS | Attribute::TARGET_METHOD | Attribute::IS_REPEATABLE)]
-class RouteMiddleware extends AbstractAnnotation
+class RouteMiddleware extends RouteAbstract
 {
     /**
      * 注解中间件

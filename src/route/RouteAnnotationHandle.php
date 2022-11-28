@@ -20,11 +20,16 @@ use shiyun\route\annotation\{
 };
 use shiyun\validate\annotation\Validate;
 use shiyun\validate\annotation\ValidateMiddleware;
+use shiyun\validate\ValidateAnnotationHandle;
 use Webman\Route as WebManRoute;
 use Webman\Route\Route as RouteObject;
 
 abstract class RouteAnnotationHandle implements IntfAnnotationHandle
 {
+    /**
+     * api标识
+     */
+    protected static array $flags = [];
     /**
      * 控制器注解
      * @var array
@@ -42,6 +47,7 @@ abstract class RouteAnnotationHandle implements IntfAnnotationHandle
      * @var array
      */
     protected static array $routes = [];
+    protected static array $routesLast = [];
 
     /**
      * 处理路由注解
@@ -49,7 +55,7 @@ abstract class RouteAnnotationHandle implements IntfAnnotationHandle
      * @param array $item
      * @return void
      */
-    public static function handle(array $item): void
+    public static function handle(array $item = []): void
     {
         if ($item['type'] === 'class') {
             self::handleClassAnnotation($item, $item['class']);
@@ -71,11 +77,11 @@ abstract class RouteAnnotationHandle implements IntfAnnotationHandle
         $parameters = $item['parameters'];
 
         switch ($annotation) {
-                // 控制器注解
-                // case RouteFlag::class:
-                // static::$controllers[$className] ??= [];
-                // static::$controllers[$className][] = $parameters;
-                // break;
+                // 标识注解
+            case RouteFlag::class:
+                static::$flags[$className] ??= [];
+                static::$flags[$className][] = $parameters;
+                break;
                 // 控制器注解
             case RouteGroup::class:
                 static::$controllers[$className] ??= [];
@@ -127,7 +133,7 @@ abstract class RouteAnnotationHandle implements IntfAnnotationHandle
                 static::$routes[] = $item;
                 break;
                 // 方法中间件注解
-            case Middleware::class:
+            case RouteMiddleware::class:
                 $middlewares = static::$middlewares[$className . ':' . $method] ??= [];
                 static::$middlewares[$className . ':' . $method] = array_merge($middlewares, (array)$parameters['middlewares']);
                 break;
@@ -174,13 +180,34 @@ abstract class RouteAnnotationHandle implements IntfAnnotationHandle
                 self::addRoute($controllerPath . $routePath, $item);
             }
         }
+        self::registerRoute();
+        // $all_route = WebmanRoute::getRoutes();
+        // var_dump($all_route);
 
         if ($isClear) {
             // 资源回收
             self::recovery();
         }
     }
-
+    /**
+     * 最终注册路由
+     * @access public
+     * @return void
+     */
+    protected static function registerRoute()
+    {
+        foreach (self::$routesLast as $item) {
+            $parameters = $item['parameters'];
+            // 添加路由
+            $route = WebManRoute::add($item['methods'], ($item['path'] ?: '/'), [$item['class'], $item['method']]);
+            // 路由参数
+            $parameters['params'] && $route->setParams($parameters['params']);
+            // 路由名称
+            $parameters['name'] && $route->name($parameters['name']);
+            // 路由中间件
+            self::addMiddleware($route, $item['class'], $item['method']);
+        }
+    }
     /**
      * 添加路由
      * @access public
@@ -192,16 +219,58 @@ abstract class RouteAnnotationHandle implements IntfAnnotationHandle
     {
         $parameters = $item['parameters'];
 
-        // 添加路由
-        $route = WebManRoute::add($parameters['methods'], ($path ?: '/'), [$item['class'], $item['method']]);
-        // 路由参数
-        $parameters['params'] && $route->setParams($parameters['params']);
-        // 路由名称
-        $parameters['name'] && $route->name($parameters['name']);
-        // 路由中间件
-        self::addMiddleware($route, $item['class'], $item['method']);
-    }
+        if (!empty($parameters['methods'])) {
+            try {
+                // 
+                /**
+                 * 新的，防止重复注册
+                 * 如果是数组的话，解析单条
+                 */
+                if (is_array($parameters['methods'])) {
+                    foreach ($parameters['methods'] as $val) {
+                        $route_flag = $path . '_' . $val;
+                        $route_flag_md5 = md5($route_flag);
+                        if (empty(self::$routesLast[$route_flag_md5])) {
+                            self::$routesLast[$route_flag_md5] = array_merge([
+                                'route_flag' => $route_flag,
+                                'route_flag_md5' => $route_flag_md5,
+                                'methods' => $val,
+                                'path' => $path
+                            ], $item);
+                        }
+                    }
+                } else if (is_string($parameters['methods'])) {
+                    $route_flag = $path . '_' . $parameters['methods'];
+                    $route_flag_md5 = md5($route_flag);
+                    if (empty(self::$routesLast[$route_flag_md5])) {
+                        self::$routesLast[$route_flag_md5] = array_merge([
+                            'route_flag' => $route_flag,
+                            'route_flag_md5' => $route_flag_md5,
+                            'methods' => $parameters['methods'],
+                            'path' => $path
+                        ], $item);
+                    }
+                }
 
+                /**
+                 * 旧的
+                 */
+                // // 添加路由
+                // $route = WebManRoute::add($parameters['methods'], ($path ?: '/'), [$item['class'], $item['method']]);
+                // // 路由参数
+                // $parameters['params'] && $route->setParams($parameters['params']);
+                // // 路由名称
+                // $parameters['name'] && $route->name($parameters['name']);
+                // // 路由中间件
+                // self::addMiddleware($route, $item['class'], $item['method']);
+            } catch (\Throwable $th) {
+                echo "error: RouteAnnotationHandle->addRoute \r\n";
+                echo "{$th->getMessage()}  \r\n";
+                throw $th;
+                return;
+            }
+        }
+    }
     /**
      * 添加中间件
      * @param RouteObject $route

@@ -21,7 +21,7 @@ class ValidateAnnotationHandle implements IntfAnnotationHandle
      * @param array $item
      * @return void
      */
-    public static function handle(array $item): void
+    public static function handle(array $item = []): void
     {
         if ($item['type'] == 'class') {
             $key = $item['class'];

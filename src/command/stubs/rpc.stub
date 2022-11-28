@@ -1,7 +1,12 @@
 <?php
-use {%namespace%}\{%useClass%}Model;
-use {%namespace%}\{%useClass%}Select;
-class {%className%} extends CtocodeRpcService
+
+declare(strict_types=1);
+
+namespace {%namespace%};
+
+use shiyun\validate\ValidateExtend;
+
+class {%className%}
 {
-	 
+
 }

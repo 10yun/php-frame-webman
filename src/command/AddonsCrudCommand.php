@@ -31,19 +31,17 @@ class AddonsCrudCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $addons = strtolower($input->getOption('addons'));
-        $output->writeln("Create Addons crud $addons");
         if (empty($addons)) {
             $output->writeln("<error> addons can not be empty</error>");
             return self::FAILURE;
         }
-        $name = strtolower($input->getOption('name'));
-        $output->writeln("Create Addons crud $name");
+        $name = $input->getOption('name');
+
+        $output->writeln("Create Addons = $addons ; crud = $name ");
         if (empty($name)) {
             $output->writeln("<error> name can not be empty</error>");
             return self::FAILURE;
         }
-
-
 
         $this->createDir($addons);
         $this->createAll($addons, $name);
@@ -73,19 +71,20 @@ class AddonsCrudCommand extends Command
         if (str_contains($name, '/')) {
             $nameArr = explode("/", $name);
             $name1 = strtolower($nameArr[0]);
-            $name2 = ucwords($nameArr[1]);
+            $name2 = ($nameArr[1]);
             $name3 = "$name1/$name2";
             $this->mkdir("$addons_path/controller/$name1");
             $this->mkdir("$addons_path/model/$name1");
             $this->mkdir("$addons_path/service/$name1");
             $this->mkdir("$addons_path/validate/$name1");
         } else {
-            $name2 = ucwords($name);
+            $name2 = ($name);
             $name3 = $name2;
         }
-        $this->createControllerFile("$addons_path/controller/{$name3}Contlr.php", "{$name2}Contlr");
+        $this->createControllerFile("$addons_path/controller/{$name3}Contlr.php", "{$name2}");
         $this->createModelFile("$addons_path/model/{$name3}Model.php", "{$name2}Model");
         $this->createValidateFile("$addons_path/validate/{$name3}Valida.php", "{$name2}Valida");
+        $this->createRpcFile("$addons_path/service/{$name3}Rpc.php", "{$name2}Rpc");
         // $this->createFunctionsFile("$addons_path/app/functions.php");
         // $this->createViewFile("$addons_path/app/view/index/index.html");
         // $this->createExceptionFile("$addons_path/app/exception/Handler.php", $name);
@@ -114,9 +113,11 @@ class AddonsCrudCommand extends Command
         $namespace_str = str_replace("/", "\\", $namespace_str);
         return $namespace_str;
     }
-    public function getStrClass($name = '')
+    protected function getStrClass($name = '')
     {
-        return ucwords($name);
+        return CommandUtils::camelizeEn(
+            CommandUtils::camelizeUn($name)
+        );
     }
     /**
      * @param $path
@@ -127,14 +128,27 @@ class AddonsCrudCommand extends Command
     {
         if (!is_file($path)) {
             $namespace = $this->getStrNamespace($path);
-            $class = $this->getStrClass($name);
+            $class = $this->getStrClass($name . 'Contlr');
+
+            $name2 = CommandUtils::camelizeUn($name);
+            $flag_name =  "{$namespace}/$name2";
+            $flag_name = str_replace('\\', "/", $flag_name);
+            $flag_name = str_replace('addons', "", $flag_name);
+            $flag_name = str_replace('controller', "", $flag_name);
+            $flag_name = str_replace('//', "/", $flag_name);
+            $flag_name = trim($flag_name, "/");
+
+            $anno_flag = strtoupper(str_replace('/', "_", $flag_name));
+            $anno_group = strtolower($flag_name);
 
             $stub_path = __DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'controller.stub';
             $stub_content = '';
             $stub_content  = file_get_contents($stub_path);
-            $stub_content = str_replace(['{%namespace%}', '{%className%}'], [
+            $stub_content = str_replace(['{%namespace%}', '{%className%}', '{%annoFlag%}', '{%annoGroup%}'], [
                 $namespace,
                 $class,
+                $anno_flag,
+                $anno_group
             ], $stub_content);
             echo "Create {$namespace} \r\n";
             file_put_contents($path, $stub_content);
@@ -165,6 +179,23 @@ class AddonsCrudCommand extends Command
             $class = $this->getStrClass($name);
 
             $stub_path = __DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'validate.stub';
+            $stub_content = '';
+            $stub_content  = file_get_contents($stub_path);
+            $stub_content = str_replace(['{%namespace%}', '{%className%}'], [
+                $namespace,
+                $class,
+            ], $stub_content);
+            echo "Create {$namespace} \r\n";
+            file_put_contents($path, $stub_content);
+        }
+    }
+    protected function createRpcFile($path, $name)
+    {
+        if (!is_file($path)) {
+            $namespace = $this->getStrNamespace($path);
+            $class = $this->getStrClass($name);
+
+            $stub_path = __DIR__ . DIRECTORY_SEPARATOR . 'stubs' . DIRECTORY_SEPARATOR . 'rpc.stub';
             $stub_content = '';
             $stub_content  = file_get_contents($stub_path);
             $stub_content = str_replace(['{%namespace%}', '{%className%}'], [

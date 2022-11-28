@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace shiyun\route\annotation;
 
-use shiyun\annotation\AbstractAnnotation;
+use shiyun\route\annotation\common\RouteAbstract;
 use Attribute;
 
 #[Attribute(Attribute::TARGET_CLASS | Attribute::TARGET_METHOD)]
-class RouteRequest
+class RouteHead extends RouteAbstract
 {
+    protected string|array $methods = ['HEAD', 'OPTIONS'];
     public function __construct(
-        string $path = '',
-        string|array $method = "*"
+        public string|array $prefix = '',
     ) {
     }
 }
