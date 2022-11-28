@@ -20,7 +20,9 @@
         "psr-4": {
             "shiyun\\": "src/"
         },
-        "files": []
+        "files": [
+            "./src/helpers.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {}
