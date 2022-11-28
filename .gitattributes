@@ -14,5 +14,5 @@
 /*.zip                 export-ignore
 
 /example/
-/composer2.json
-/README.md
+composer2.json
+README.md
