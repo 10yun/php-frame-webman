@@ -68,16 +68,19 @@ php start.php start
 
 ```sh
 # get
-curl http://127.0.0.1:8787/my_app1
-curl http://127.0.0.1:8787/my_app1/123
+curl http://127.0.0.1:8787/module1/role1/test1
+curl http://127.0.0.1:8787/module1/role1/test1/123
 
 # post
-curl -X 
-
+curl -X POST http://127.0.0.1:8787/module1/role1/test1
 
 # put
+curl -X PUT http://127.0.0.1:8787/module1/role1/test1/123
 
 # patch
+curl -X PATCH http://127.0.0.1:8787/module1/role1/test1/123
 
+# delete
+curl -X DELETE http://127.0.0.1:8787/module1/role1/test1/123
 
 ```

@@ -71,14 +71,14 @@ class AddonsCrudCommand extends Command
         if (str_contains($name, '/')) {
             $nameArr = explode("/", $name);
             $name1 = strtolower($nameArr[0]);
-            $name2 = ($nameArr[1]);
+            $name2 = $this->getStrClass($nameArr[1]);
             $name3 = "$name1/$name2";
             $this->mkdir("$addons_path/controller/$name1");
             $this->mkdir("$addons_path/model/$name1");
             $this->mkdir("$addons_path/service/$name1");
             $this->mkdir("$addons_path/validate/$name1");
         } else {
-            $name2 = ($name);
+            $name2 = $this->getStrClass($name);
             $name3 = $name2;
         }
         $this->createControllerFile("$addons_path/controller/{$name3}Contlr.php", "{$name2}");

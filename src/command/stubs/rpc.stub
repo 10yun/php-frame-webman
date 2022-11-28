@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace {%namespace%};
 
-use shiyun\validate\ValidateExtend;
+use shiyun\rpc\RpcService;
 
-class {%className%}
+class {%className%} extends RpcService
 {
 
 }

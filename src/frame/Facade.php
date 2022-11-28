@@ -1,0 +1,23 @@
+<?php
+
+namespace shiyun\frame;
+
+class Facade
+{
+    protected $facade;
+
+    public function __construct()
+    {
+        $this->facade = new $this->facade;
+    }
+
+    public function __call($name, $params)
+    {
+        return call_user_func_array([$this->facade, $name], $params);
+    }
+
+    public static function __callStatic($name, $params)
+    {
+        return call_user_func_array([new static(), $name], $params);
+    }
+}
