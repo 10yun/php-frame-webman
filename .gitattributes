@@ -12,7 +12,6 @@
 /Makefile              export-ignore
 /.vscode/              export-ignore
 /*.zip                 export-ignore
-
-/example/
-composer2.json
-README.md
+/example/              export-ignore
+composer2.json         export-ignore
+README.md              export-ignore
