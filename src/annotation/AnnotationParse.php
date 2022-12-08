@@ -119,10 +119,14 @@ abstract class AnnotationParse
         string|ReflectionClass $className
     ): Generator {
         $reflectionClass = is_string($className) ? new ReflectionClass($className) : $className;
-
-        // 获取类的注解
+        /**
+         * 获取类的注解
+         */
         yield from self::getClassAnnotations($reflectionClass);
-        // 获取所有方法的注解
+        /**
+         * TODO: 获取所有方法的注解
+         * 等待删除
+         */
         // foreach ($reflectionClass->getMethods(ReflectionMethod::IS_PUBLIC) as $reflectionMethod) {
         //     $middlewares = '';
         //     $path        = "";
@@ -148,8 +152,10 @@ abstract class AnnotationParse
         //         }
         //     }
         // }
+        /**
+         * 获取方法注解
+         */
         foreach ($reflectionClass->getMethods() as $reflectionMethod) {
-            // 获取方法注解
             $method = self::getMethodAnnotations($reflectionMethod);
             $method && (yield from $method);
             // 获取方法参数的注解
@@ -158,7 +164,9 @@ abstract class AnnotationParse
                 $parameter && (yield from $parameter);
             }
         }
-        // 获取所有属性的注解
+        /**
+         * 获取所有属性的注解
+         */
         foreach ($reflectionClass->getProperties() as $reflectionProperty) {
             $property = self::getPropertyAnnotations($reflectionClass, $reflectionProperty);
             $property && (yield from $property);
@@ -233,6 +241,12 @@ abstract class AnnotationParse
             // 扫描PHP8原生注解
             $attributes = $reflection->getAttributes();
 
+            //返回类中所有方法
+            $function_arr  = [];
+            foreach ($reflection->getMethods(ReflectionMethod::IS_PUBLIC) as $reflectionMethod) {
+                $function_arr[] = $reflectionMethod->getName();
+            }
+
             return self::buildScanAnnotationItems([
                 ...$attributes,
                 // ...self::getPhp7('class', $reflection)
@@ -240,6 +254,7 @@ abstract class AnnotationParse
                 'type' => 'class',
                 // 类名
                 'class' => $reflection->name,
+                'functions' => $function_arr,
             ]);
         });
 
